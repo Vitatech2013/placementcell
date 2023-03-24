@@ -1,0 +1,109 @@
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+    .tablecss {
+        font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+        border-collapse: collapse;
+        width: 98%;
+    }
+
+    .tablecss td,
+    .tablecss th {
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+
+    .tablecss tr:nth-child(odd) {
+        background-color: #f2f2f2;
+    }
+
+    .tablecss tr:hover {
+        background-color: #ddd;
+    }
+
+    .tablecss th {
+        padding-top: 12px;
+        padding-bottom: 12px;
+        text-align: center;
+        background-color: lavender;
+        color: black;
+        font-weight: bold;
+    }
+</style>
+
+<script>
+    let applyjob = [];
+
+    function performAjax(httpMethod, url, params) {
+        const myPromise = new Promise((resolve, reject) => {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    resolve(this.responseText);
+                }
+                if (this.status == 500) {
+                    reject({ error: true, message: "ServerError" });
+                }
+                if (this.status == 404) {
+                    reject({ error: true, message: "Resource not found" });
+                }
+            };
+            xhttp.open(httpMethod, url, true);
+            xhttp.setRequestHeader("Content-Type", "application/json");
+            params ? xhttp.send(params) : xhttp.send();
+        });
+        return myPromise;
+    }
+
+    function LoadApplyJobsData() {
+        event.preventDefault();
+        const getdata1 = performAjax("GET", "http://localhost:4000/admin/applyjob");
+        getdata1
+            .then((ofclist) => {
+
+                LoadApplyJobs(ofclist);
+            })
+            .catch(err => {
+                alert(err.message);
+            })
+    }
+
+    function LoadApplyJobs(applyjobs) {
+        applyjob = JSON.parse(applyjobs);
+        let tableHeader = `<tr><th>Sno</th><th>Name</th><th>Emailid</th><th>PhoneNumber</th><th>SSC</th><th>Inter</th><th>Qualification</th><th>CompanyName</th><th>JobCategory</th><th>RequiredSkills</th><th>Resume</th></tr>`;
+        if (applyjob.length > 0) {
+            let tableRow = applyjob.map((details, index) => {
+                const downloadButton = `<a class="glyphicon glyphicon-download" style="color:blue; font-size:22px;" onclick="downloadDoc('${details._id}')"></a>`;
+                return `<tr><td>${index + 1}</td><td>${details.name}</td> <td>${details.emailid}</td>  
+                            <td>${details.phone}</td> <td>${details.ssc}</td> <td>${details.inter}</td> <td>${details.qualification}</td><td>${details.companyname}</td> <td>${details.jobcategory}</td> <td>${details.requiredskills}</td><td>${downloadButton}</td></tr>`;
+            });
+            document.getElementById("viewapplyjobs").innerHTML = `<table  class="tablecss" border="2">${tableHeader}${tableRow.join('')}</table>`;
+        }
+        else {
+            tableRow = `<tr><td colspan="12" align="center">No Data Found</td></tr>`;
+            document.getElementById("viewapplyjobs").innerHTML = `${tableHeader}${tableRow}`;
+        }
+    }
+
+    function downloadDoc(id) {
+        const getFilesPromise = performAjax("GET", `http://localhost:4000/student/download/${id}`);
+        getFilesPromise
+            .then((response) => {
+                window.open(JSON.parse(response).resume);
+            })
+            .catch(err => {
+                alert(err.message);
+            })
+    }
+</script>
+<html>
+
+<body onload="LoadApplyJobsData()">
+    <center>
+        <table id="viewapplyjobs" border="2" class="tablecss"></table>
+    </center>
+</body>
+
+</html>

@@ -1,0 +1,136 @@
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+
+    <title>Placement Cell</title>
+    <script>
+
+        function performAjax(httpMethod, url, params) {
+            const myPromise = new Promise((resolve, reject) => {
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function () {
+                    if (this.readyState == 4 && this.status == 200) {
+                        resolve((this.responseText));
+                    }
+                    if (this.status == 500) {
+                        reject({ error: true, message: "ServerError" });
+                    }
+                    if (this.status == 404) {
+                        reject({ error: true, message: "Resource not found" });
+                    }
+                };
+                xhttp.open(httpMethod, url, true);
+                xhttp.setRequestHeader("Content-Type", "application/json");
+                params ? xhttp.send(params) : xhttp.send();
+            });
+            return myPromise;
+        }
+
+        function CompanyRegister() {
+            event.preventDefault();
+            const id = document.getElementById("comid").value;
+            const CompanyName = document.getElementById("CompanyName").value;
+            const CompanyType = document.getElementById("comtype").value;
+            const Phoneno = document.getElementById("comphoneno").value;
+            const Emailid = document.getElementById("comemailid").value;
+            const Address = document.getElementById("comaddress").value;
+            const City = document.getElementById("comcity").value;
+            const State = document.getElementById("comstate").value;
+            const Branch = document.getElementById("combranch").value;
+            const CompanyWebsite = document.getElementById("comcompanywebsite").value;
+
+           
+                const addcomPromise = performAjax(
+                    "POST",
+                    "http://localhost:4000/officer/addcompany",
+                    JSON.stringify({ CompanyName, CompanyType, Phoneno, Emailid, Address, City, State, Branch, CompanyWebsite })
+
+                );
+                addcomPromise
+                    .then((response) => {
+                        confirm(" Successfully CompanysRegistered");
+                        $('#myModalcompanys').modal("hide");
+                    })
+                    .catch(err => {
+                        alert(err.message);
+                    })
+
+        }
+
+    </script>
+
+
+<body>
+    <br>
+    <form onsubmit="CompanyRegister()">
+    <div class="row">
+        <div class="col-sm-12">
+            <div style="background-color:lavender;border-radius: 10px"><br>
+
+                <div class="row" style="display:none;">
+                    <div class="col-sm-2"></div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-2"><input type="hidden" id="comid" class="form-control" ></div>
+                
+                    <div class="col-sm-3"><b>Company Name</b><input type="text" id="CompanyName"
+                            placeholder="Company Name" class="form-control" required></div>
+                    <div class="col-sm-3"><b>ComapanyType</b><select id="comtype" class="form-control" required>
+                            <option value="">--Select--</option>
+                            <option value="MNC">MNC</option>
+                            <option value="IBM">IBM</option>
+                            <option value="IT">IT</option>
+                        </select></div>
+                    <div class="col-sm-3"><b>MobileNumber</b><input type="number" id="comphoneno"
+                            placeholder="Enter MobileNumber" class="form-control" maxlength="10" pattern="[6-9]{1}[0-9]{9}" required></div>
+                    <div class="col-sm-1"></div>
+                </div><br><br>
+                <div class="row">
+                    <div class="col-sm-2"></div>
+                    <div class="col-sm-3"><b>EmailId</b><br><input type="email" id="comemailid"
+                            placeholder="Enter EmailId" class="form-control" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" required></div>
+                    <div class="col-sm-3"><b>Address</b><input type="text" id="comaddress" placeholder="Enter Address"
+                            class="form-control" required></div>
+                    <div class="col-sm-3"><b>City</b><br><select id="comcity" class="form-control" required>
+                            <option value="">--Select--</option>
+                            <option value="Hyderabad">Hyderabad</option>
+                            <option value="Banglore">Banglore</option>
+                            <option value="Hanamkond">Hanamkond</option>
+                            <option value="Karimnagar">Karimnagar</option>
+                        </select></div>
+                    <div class="col-sm-1"></div>
+                </div> <br><br>
+                <div class="row">
+                    <div class="col-sm-2"></div>
+                    <div class="col-sm-3"><b>State</b><select id="comstate" class="form-control" required>
+                            <option value="">--Select--</option>
+                            <option value="Telangana">Telangana</option>
+                            <option value="Andhrapradhesh">Andhrapradhesh</option>
+                        </select></div>
+                    <div class="col-sm-3"><b>Branch</b><input type="text" id="combranch" placeholder="Enter Branch"
+                            class="form-control" required></div>
+                    <div class="col-sm-3"><b>Company Website</b><input type="text" id="comcompanywebsite"
+                            placeholder="Enter Companywebsite" class="form-control" required></div>
+                    <div class="col-sm-1"></div>
+                </div> <br><br>
+                <div class="row">
+                    <div class="col-sm-5"></div>
+                    <div class="col-sm-1"><button type="submit"  class="btn btn-success"
+                            >Add
+                            Companys</button></div>
+                   
+                    <div class="col-sm-5"></div>
+                </div><br><br>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-1"></div>
+    </div></form>
+</body>

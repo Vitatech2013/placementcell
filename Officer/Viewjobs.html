@@ -1,0 +1,274 @@
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+  <style>
+    .tablecss {
+      font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    .tablecss td,
+    .tablecss th {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+
+    .tablecss tr:nth-child(odd) {
+      background-color: #f2f2f2;
+    }
+
+    .tablecss tr:hover {
+      background-color: #ddd;
+    }
+
+    .tablecss th {
+      padding-top: 12px;
+      padding-bottom: 12px;
+      text-align: center;
+      background-color: lavender;
+      color: black;
+      font-weight: bold;
+    }
+  </style>
+<script>
+  let company = [];
+
+  function performAjax(httpMethod, url, params) {
+    const myPromise = new Promise((resolve, reject) => {
+      var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+          resolve(this.responseText);
+        }
+        if (this.status == 500) {
+          reject({ error: true, message: "ServerError" });
+        }
+        if (this.status == 404) {
+          reject({ error: true, message: "Resource not found" });
+        }
+      };
+      xhttp.open(httpMethod, url, true);
+      xhttp.setRequestHeader("Content-Type", "application/json");
+      params ? xhttp.send(params) : xhttp.send();
+    });
+    return myPromise;
+  }
+
+  function LoadData() {
+    const getdata1 = performAjax("GET", "http://localhost:4000/officer/viewcompany");
+    getdata1
+      .then((companys) => {
+        GetCompanyName(companys);
+
+      })
+      .catch(err => {
+        alert(err.message);
+      })
+  }
+
+  function GetCompanyName(Data) {
+    const CompanyName = document.getElementById("jobcompanyname");
+    const data = JSON.parse(Data);
+    for (let i = 0; i < data.length; i++) {
+      let option = document.createElement("OPTION");
+      option.innerHTML = data[i].CompanyName;
+      option.value = data[i].CompanyName;
+      CompanyName.options.add(option);
+    }
+  }
+
+  function LoadJobsData() {
+    const getdata1 = performAjax("GET", "http://localhost:4000/officer/viewjobdetails");
+    getdata1
+      .then((jobs) => {
+        LoadJobs(jobs);
+      })
+      .catch(err => {
+        alert(err.message);
+      })
+  }
+
+  function LoadJobs(jobs) {
+    job = JSON.parse(jobs);
+    let tableHeader = `<tr><th>Sno</th><th>CompanyName</th><th>JobLocation</th><th>JobRole</th><th>Qualification</th><th>JobCategory</th><th>RequiredSkills</th><th>ApplyLastDate</th><th>Actions</th></tr>`;
+    if (job.length > 0) {
+    let tableRow = job.map((details, index) => {
+      const deleteButton = `<a id="${details._id}"
+                         onclick="deleteJobName(event)"  style="color:red" class="glyphicon glyphicon-trash"></a>`;
+      const editButton = `<a id="${details._id}" onclick="editJobName(event)" style="color:green"  class="glyphicon glyphicon-pencil"></a>`;
+      return `<tr><td>${index + 1}</td><td>${details.CompanyName}</td> <td>${details.JobLocation}</td> <td>${details.JobRole}</td><td>${details.Qualification}</td>  
+                            <td>${details.JobCategory}</td> <td>${details.RequiredSkills}</td> <td>${details.ApplylastDate}</td><td>${editButton} ${deleteButton}</td></tr>`;
+    });
+    document.getElementById("viewjobs").innerHTML = `<table class="tablecss" border="2">${tableHeader}${tableRow.join('')}</table>`;
+  } else {
+            tableRow = `<tr><td colspan="12" align="center">No Data Found</td></tr>`;
+            document.getElementById("viewjobs").innerHTML = `${tableHeader}${tableRow}`;
+        }
+      }
+
+
+  function editJobName(event) {
+    event.preventDefault();
+    let editRecord;
+    job.map(jb => {
+      if (jb._id === event.target.id) {
+        editRecord = jb;
+      }
+    });
+    if (editRecord !== undefined) {
+      $("#myModaljobs").modal();
+      document.getElementById("jobcompanyname").focus();
+      document.getElementById("jobid").value = editRecord._id;
+      document.getElementById("jobcompanyname").value = editRecord.CompanyName;
+      document.getElementById("joblocation").value = editRecord.JobLocation;
+      document.getElementById("jobrole").value = editRecord.JobRole;
+      document.getElementById("jobqua").value = editRecord.Qualification;
+      document.getElementById("jobcategory").value = editRecord.JobCategory;
+      document.getElementById("jobreqskills").value = editRecord.RequiredSkills;
+      document.getElementById("applydate").value = editRecord.ApplylastDate;
+
+    }
+    else {
+      alert("Jobs not found");
+    }
+  }
+
+
+  function deleteJobName(event) {
+    event.preventDefault();
+    let result = confirm("Are you sure you want to delete?");
+    if (result) {
+      const deletePromise = performAjax('DELETE', `http://localhost:4000/officer/job/${event.target.id}`);
+      deletePromise
+        .then((remainingstds) => {
+          LoadJobs(remainingstds);
+        })
+        .catch(err => {
+          alert(err.message);
+        })
+    }
+  }
+  function JobUpdate() {
+    event.preventDefault();
+    const id = document.getElementById("jobid").value;
+    const CompanyName = document.getElementById("jobcompanyname").value;
+    const JobLocation = document.getElementById("joblocation").value;
+    const JobRole = document.getElementById("jobrole").value;
+    const Qualification = document.getElementById("jobqua").value;
+    const JobCategory = document.getElementById("jobcategory").value;
+    const RequiredSkills = document.getElementById("jobreqskills").value;
+    const ApplylastDate = document.getElementById("applydate").value;
+
+    const updatestdPromise = performAjax(
+      "PUT",
+      `http://localhost:4000/officer/jobupdate/${id}`,
+      JSON.stringify({ CompanyName, JobLocation, JobRole, Qualification, JobCategory, RequiredSkills, ApplylastDate })
+    );
+    updatestdPromise
+      .then((remaining) => {
+        confirm(" Updated Successfully ");
+        $('#myModaljobs').modal("hide");
+      })
+      .catch(err => {
+        alert(err.message);
+      })
+
+  }
+</script>
+
+<body onload="LoadJobsData()">
+  <table id="viewjobs" border="2" class="tablecss"></table>
+
+
+
+  <div class="modal fade" id="myModaljobs" role="dialog">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content" style="background-color:lavender;border-radius: 10px">
+        <div class="modal-header" style="background-color:white;border-radius :10px">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h3 style="color:black;text-align:center"> Registration For Jobs</h3>
+        </div>
+        <div class="modal-body">
+          <form onsubmit="JobUpdate()">
+          <div class="row">
+            <div class="col-sm-12">
+              <div style="background-color: lavender;border-radius: 10px"><br>
+                <script>
+                  LoadData();
+                </script>
+                <div class="row" style="display:none;">
+                  <div class="col-sm-2"></div>
+                  <div class="col-sm-3"><b>Id</b><input type="text" id="jobid" visibility="none"
+                      class="form-control" required><br>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-sm-2"></div>
+                  <div class="col-sm-3"><b>Company name&nbsp;</b><select id="jobcompanyname" class="form-control" required>
+                      <option value="">--select--</option>
+                    </select></div>
+                  <div class="col-sm-3"><b>Job location</b><select id="joblocation" class="form-control" required>
+                      <option value="">--select--</option>
+                      <option value="Karimnagar">Karimnagar</option>
+                      <option value="Hyderabad">Hyderabad</option>
+                      <option value="warangal">warangal</option>
+                      <select></div>
+                  <div class="col-sm-3"><b>Job Role</b><select id="jobrole" class="form-control" required>
+                      <option value="">--select-- </option>
+                      <option value="SoftWareEngeneer">SoftWareEngeneer</option>
+                      <option value="Software Programmer">Software Programmer</option>
+                      <option value="Software Programmer">SoftwareTrainy Programmer</option>
+                    </select></div>
+                  <div class="col-sm-1"></div>
+                </div><br><br>
+                <div class="row">
+                  <div class="col-sm-2"></div>
+                  <div class="col-sm-3"><b> Qualification</b><select id="jobqua" class="form-control" required>
+                      <option value="">--select-- </option>
+                      <option value="Msc">Msc</option>
+                      <option value="B.Tech">B.Tech</option>
+                      <option value="M.Tech">M.Tech</option>
+                      <option value="MCA">MCA</option>
+                    </select></div>
+                  <div class="col-sm-3"><b>Job Category</b><select id="jobcategory" class="form-control" required>
+                      <option value="">--select--</option>
+                      <option value="SoftWare">SoftWare</option>
+                      <var>
+                        <option value="Mech">Mech</option>
+                      </var>
+                    </select></div>
+                  <div class="col-sm-3"><b>Required Skills</b><select id="jobreqskills" class="form-control" required>
+                      <option value="">--select--</option>
+                      <option value="Html & JavaScript">Html & JavaScript</option>
+                      <option value="c,.Net & Html">c,.Net & Html</option>
+                      <option value="BootStrap,Node.js & Mongodb">BootStrap,Node.js & Mongodb</option>
+                    </select></div>
+                  <div class="col-sm-1"></div>
+                </div> <br><br>
+                <div class="row">
+                  <div class="col-sm-2"></div>
+                  <div class="col-sm-3"><b>Apply Lastdate</b><input type="date" id="applydate" class="form-control" required>
+                    <div class="col-sm-7"></div>
+                  </div>
+                </div><br>
+                <div class="row">
+                  <div class="col-sm-5"></div>
+
+                  <div class="col-sm-1"><button type="submit" id="jobupdate" class="btn btn-success"
+                      >Update
+                      Jobs</button></div>
+                  <div class="col-sm-5"></div>
+                </div><br><br>
+              </div>
+            </div>
+            <div class="col-sm-1"></div>
+          </div></form>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>

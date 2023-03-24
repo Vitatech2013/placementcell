@@ -1,0 +1,146 @@
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+
+    <title>Placementcell</title>
+<script>
+    const Name = sessionStorage.getItem("Name");
+    const id = sessionStorage.getItem("userid");
+    function performAjax(httpMethod, url, params) {
+        const myPromise = new Promise((resolve, reject) => {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    resolve(this.responseText);
+                }
+                if (this.status == 500) {
+                    reject({ error: true, message: "ServerError" });
+                }
+                if (this.status == 404) {
+                    reject({ error: true, message: "Resource not found" });
+                }
+            };
+            xhttp.open(httpMethod, url, true);
+            xhttp.setRequestHeader("Content-Type", "application/json");
+            params ? xhttp.send(params) : xhttp.send();
+        });
+        return myPromise;
+    }
+
+    function OfficerUpdate() {
+        event.preventDefault();
+        const id = document.getElementById("ofcid").value;
+        const Name = document.getElementById("ofcname").value;
+        const Gender = document.getElementById("Male").checked ? "Male" : "Female";
+        const EmailId = document.getElementById("ofcemailid").value;
+        const Mobileno = document.getElementById("ofcmobileno").value;
+        const City = document.getElementById("ofccity").value;
+        const Address = document.getElementById("ofcaddress").value;
+
+        const updateofcPromise = performAjax(
+            "PUT",
+            `http://localhost:4000/officer/${id}`,
+            JSON.stringify({ Name, Gender, EmailId, Mobileno, City, Address })
+        );
+        updateofcPromise
+            .then((response) => {
+                confirm("Successfully Updated");
+            })
+            .catch(err => {
+                alert(err.message);
+            })
+    }
+    function GetData() {
+        const getUsersPromise = performAjax("GET", `http://localhost:4000/officer/viewprofile?Name=${Name}`);
+        getUsersPromise
+            .then((data) => {
+                const profile = JSON.parse(data);
+                profile.map(rec => {
+                    document.getElementById("ofcid").value =rec._id;
+                    document.getElementById("ofcname").value =rec.Name;
+                    rec.Gender === 'Male' ? document.getElementById("Male").checked = true : document.getElementById("Female").checked = true;
+                    document.getElementById("ofcemailid").value =rec.EmailId;
+                    document.getElementById("ofcmobileno").value =rec.Mobileno;
+                    document.getElementById("ofccity").value =rec.City;
+                    document.getElementById("ofcaddress").value =rec.Address;
+                });
+
+            })
+            .catch(err => {
+                alert(err.message);
+            })
+    }
+
+
+</script>
+
+<body onload="GetData()">
+    <form onsubmit="OfficerUpdate()">
+    <div class="row" style="display:none;">
+        <div class="col-sm-2"></div>
+        <div class="col-sm-3"><b>officerId</b><br><input type="text" id="ofcid" disabled="true" class="form-control" required>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-3"></div>
+        <div class="col-sm-2"><b>Name</b></div>
+        <div class="col-sm-3"><input type="text" id="ofcname" placeholder="Enter Your Name" class="form-control" required></div>
+        <div class="col-sm-2"></div>
+    </div><br>
+    <div class="row">
+        <div class="col-sm-3"></div>
+        <div class="col-sm-2"><b>Gender</b></div>
+        <div class="col-sm-3">
+            <input type="radio" value="male" name="gender" id="Male" checked="true">Male
+            <input type="radio" value="female" name="gender" id="Female">Female
+        </div>
+        <div class="col-sm-2"></div>
+    </div><br>
+    <div class="row">
+        <div class="col-sm-3"></div>
+        <div class="col-sm-2"><b>Email-Id</b></div>
+        <div class="col-sm-3"><input type="email" id="ofcemailid" placeholder="Enter EmailId" class="form-control" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" required>
+        </div>
+        <div class="col-sm-2"></div>
+
+    </div>
+    <br>
+    <div class="row">
+        <div class="col-sm-3"></div>
+        <div class="col-sm-2"><b>Phone number</b></div>
+        <div class="col-sm-3"><input type="text" id="ofcmobileno" placeholder="Enter MobileNumber"
+                class="form-control" maxlength="10" pattern="[6-9]{1}[0-9]{9}" required></div>
+        <div class="col-sm-2"></div>
+
+    </div><br>
+    <div class="row">
+        <div class="col-sm-3"></div>
+        <div class="col-sm-2"><b>Enter city</b></div>
+        <div class="col-sm-3"><input type="text" id="ofccity" placeholder="Enter City" class="form-control" required>
+        </div>
+        <div class="col-sm-2"></div>
+    </div>
+    <br>
+    <div class="row">
+        <div class="col-sm-3"></div>
+        <div class="col-sm-2"><b>Address</b></div>
+        <div class="col-sm-3"><textarea id="ofcaddress" placeholder="Enter Address" class="form-control" required></textarea>
+        </div>
+        <div class="col-sm-2"></div>
+    </div><br>
+
+    <div class="row">
+        <div class="col-sm-5"></div>
+        <div class="col-sm-1"><button type="submit" id="ofcupdate"  class="btn btn-success"
+                >Update Placement Officer</button></div>
+        <div class="col-sm-5"></div>
+    </div><br><br>
+    </div>
+    </div>
+    </div>
+    <div class="col-sm-1"></div>
+    </div></form>
+</body>

@@ -1,0 +1,233 @@
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        .footer {
+            position: fixed;
+            left: 0;
+            bottom: 1;
+            width: 100%;
+            color: white;
+            text-align: center;
+            border-radius: 10px;
+        }
+    </style>
+    <style>
+        .tablecss {
+            font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .tablecss td,
+        .tablecss th {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        .tablecss tr:nth-child(odd) {
+            background-color: #f2f2f2;
+        }
+
+        .tablecss tr:hover {
+            background-color: #ddd;
+        }
+
+        .tablecss th {
+            padding-top: 12px;
+            padding-bottom: 12px;
+            text-align: center;
+            background-color: lavender;
+            color: black;
+            font-weight: bold;
+        }
+    </style>
+    <title>Placement Cell</title>
+    <script>
+        let companys = [];
+        let officer = [];
+        let jobs = [];
+        let applyjob = [];
+
+        const Name = sessionStorage.getItem("Name");
+
+        function performAjax(httpMethod, url, params) {
+            const myPromise = new Promise((resolve, reject) => {
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function () {
+                    if (this.readyState == 4 && this.status == 200) {
+                        resolve((this.responseText));
+                    }
+                    if (this.status == 500) {
+                        reject({ error: true, message: "ServerError" });
+                    }
+                    if (this.status == 404) {
+                        reject({ error: true, message: "Resource not found" });
+                    }
+                };
+                xhttp.open(httpMethod, url, true);
+                xhttp.setRequestHeader("Content-Type", "application/json");
+                params ? xhttp.send(params) : xhttp.send();
+            });
+            return myPromise;
+        }
+
+
+        function GetValues(event) {
+            const getUsersPromise = performAjax("GET", `http://localhost:4000/officer?${event.target.id}`);
+            getUsersPromise
+                .then((data) => {
+                    const profile = JSON.parse(data);
+                    profile.map(rec => {
+                        document.getElementById("companyname").value = rec.companyname;
+                        document.getElementById("jobcatogory1").value = rec.jobcategory;
+                        document.getElementById("id").value = event.target.id;
+                    });
+                })
+                .catch(err => {
+                    alert(err.message);
+                })
+        }
+
+
+
+        function GetCompanyName(Data) {
+            const CompanyName = document.getElementById("jobcompanyname");
+            const data = JSON.parse(Data);
+            for (let i = 0; i < data.length; i++) {
+                let option = document.createElement("OPTION");
+                option.innerHTML = data[i].CompanyName;
+                option.value = data[i].CompanyName;
+                CompanyName.options.add(option);
+            }
+        }
+
+
+
+        function LoadData() {
+            const getdata1 = performAjax("GET", "http://localhost:4000/officer/viewcompany");
+            getdata1
+                .then((companys) => {
+                    GetCompanyName(companys);
+
+                })
+                .catch(err => {
+                    alert(err.message);
+                })
+        }
+
+
+
+        function JobRegister() {
+            event.preventDefault();
+            const id = document.getElementById("jobid").value;
+            const CompanyName = document.getElementById("jobcompanyname").value;
+            const JobLocation = document.getElementById("joblocation").value;
+            const JobRole = document.getElementById("jobrole").value;
+            const Qualification = document.getElementById("jobqua").value;
+            const JobCategory = document.getElementById("jobcategory").value;
+            const RequiredSkills = document.getElementById("jobreqskills").value;
+            const ApplylastDate = document.getElementById("applydate").value;
+
+          
+                const addstdPromise = performAjax(
+                    "POST",
+                    "http://localhost:4000/officer/addjob",
+                    JSON.stringify({ CompanyName, JobLocation, JobRole, Qualification, JobCategory, RequiredSkills, ApplylastDate })
+
+                );
+                addstdPromise
+                    .then((remaining) => {
+                        confirm(" Successfully JobsRegistered");
+                        $('#myModaljobs').modal("hide");
+
+                    })
+                    .catch(err => {
+                        alert(err.message);
+                    })
+
+            } 
+        
+
+    </script>
+
+<body>
+<form onsubmit="JobRegister()">
+    <div class="row">
+        <div class="col-sm-12">
+            <div style="background-color: lavender;border-radius: 10px"><br>
+                <script>
+                    LoadData();
+                </script>
+                <div class="row" style="display:none;">
+                    <div class="col-sm-2"></div>
+                    <div class="col-sm-3"><b>Id</b><input type="text" id="jobid" visibility="none"
+                            class="form-control"><br>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-2"></div>
+                    <div class="col-sm-3"><b>Company name&nbsp;</b><select id="jobcompanyname" class="form-control" required>
+                            <option value="">--select--</option>
+                        </select></div>
+                    <div class="col-sm-3"><b>Job location</b><select id="joblocation" class="form-control" required>
+                            <option value="">select</option>
+                            <option value="Karimnagar">Karimnagar</option>
+                            <option value="Hyderabad">Hyderabad</option>
+                            <option value="warangal">warangal</option>
+                            <select></div>
+                    <div class="col-sm-3"><b>Job Role</b><select id="jobrole" class="form-control" required>
+                            <option value="">--select--</option>
+                            <option value="SoftWareEngeneer">SoftWareEngeneer</option>
+                            <option value="Software Programmer">Software Programmer</option>
+                            <option value="Software Programmer">SoftwareTrainy Programmer</option>
+                        </select></div>
+                    <div class="col-sm-1"></div>
+                </div><br><br>
+                <div class="row">
+                    <div class="col-sm-2"></div>
+                    <div class="col-sm-3"><b> Qualification</b><select id="jobqua" class="form-control" required>
+                            <option value="">--select-- </option>
+                            <option value="Msc">Msc</option>
+                            <option value="B.Tech">B.Tech</option>
+                            <option value="M.Tech">M.Tech</option>
+                            <option value="MCA">MCA</option>
+                        </select></div>
+                    <div class="col-sm-3"><b>Job Category</b><select id="jobcategory" class="form-control"required>
+                            <option value="">--select--</option>
+                            <option value="SoftWare">SoftWare</option>
+                            <var>
+                                <option value="Mech">Mech</option>
+                            </var>
+                        </select></div>
+                    <div class="col-sm-3"><b>Required Skills</b><select id="jobreqskills" class="form-control" required>
+                            <option value="">--select--</option>
+                            <option value="Html & JavaScript">Html & JavaScript</option>
+                            <option value="c,.Net & Html">c,.Net & Html</option>
+                            <option value="BootStrap,Node.js & Mongodb">BootStrap,Node.js & Mongodb</option>
+                        </select></div>
+                    <div class="col-sm-1"></div>
+                </div> <br><br>
+                <div class="row">
+                    <div class="col-sm-2"></div>
+                    <div class="col-sm-3"><b>Apply Lastdate</b><input type="date" id="applydate" class="form-control" required>
+                        <div class="col-sm-7"></div>
+                    </div>
+                </div><br>
+                <div class="row">
+                    <div class="col-sm-5"></div>
+                    <div class="col-sm-1"><button type="submit" class="btn btn-success"
+                            >Add Jobs</button></div>
+                   
+                    <div class="col-sm-5"></div>
+                </div><br><br>
+            </div>
+        </div>
+        <div class="col-sm-1"></div>
+    </div></form>
+</body>

@@ -1,0 +1,188 @@
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+
+    <title>Placementcell</title>
+
+<script>
+    const studentname = sessionStorage.getItem("studentname");
+    const emailid = sessionStorage.getItem("emailid");
+    function performAjax(httpMethod, url, params) {
+        const myPromise = new Promise((resolve, reject) => {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    resolve(this.responseText);
+                }
+                if (this.status == 500) {
+                    reject({ error: true, message: "ServerError" });
+                }
+                if (this.status == 404) {
+                    reject({ error: true, message: "Resource not found" });
+                }
+            };
+            xhttp.open(httpMethod, url, true);
+            xhttp.setRequestHeader("Content-Type", "application/json");
+            params ? xhttp.send(params) : xhttp.send();
+        });
+        return myPromise;
+    }
+    function StudentUpdate() {
+        const id = document.getElementById("stdid").value;
+        const studentname = document.getElementById("studentname").value;
+        const gender = document.getElementById("male").checked ? "Male" : "Female";
+        const dob = document.getElementById("dob").value;
+        const emailid = document.getElementById("emailid").value;
+        const mobile = document.getElementById("mobile").value;
+        const address = document.getElementById("address").value;
+        const collegename = document.getElementById("collegename").value;
+        const education = document.getElementById("education").value;
+        const branch = document.getElementById("branch").value;
+        const passyear = document.getElementById("passyear").value;
+        const skills = document.getElementById("skills").value;
+        const extraskills = document.getElementById("extraskills").value;
+
+        const getRegPromise = performAjax(
+            "PUT",
+            `http://localhost:4000/student/updateprofile/${id}`,
+            JSON.stringify({ studentname, gender, dob, emailid, mobile, address, collegename, education, branch, passyear, skills, extraskills })
+        );
+        getRegPromise
+            .then((regPromise) => {
+                alert('Update Successfully Completed');
+                document.getElementById("studentname").value = "";
+                document.getElementById("dob").value = "";
+                document.getElementById("emailid").value = "";
+                document.getElementById("collegename").value = "";
+                document.getElementById("mobile").value = "";
+                document.getElementById("address").value = "";
+                document.getElementById("education").value = "";
+                document.getElementById("branch").value = "";
+                document.getElementById("passyear").value = "";
+                document.getElementById("skills").value = "";
+                document.getElementById("extraskills").value = "";
+
+            })
+            .catch(err => {
+                alert(err.message);
+            })
+    }
+    function GetData() {
+        const getUsersPromise = performAjax("GET", `http://localhost:4000/student/viewstudents?studentname=${studentname}&emailid=${emailid}`);
+        getUsersPromise
+            .then((data) => {
+                const profile = JSON.parse(data);
+                profile.map(rec => {
+                    document.getElementById("stdid").value = rec._id;
+                    document.getElementById("studentname").value = rec.studentname;
+                    rec.gender === "Male" ? document.getElementById("male").checked = true : document.getElementById("female").checked = true;
+                    document.getElementById("dob").value = rec.dob;
+                    document.getElementById("emailid").value = rec.emailid;
+                    document.getElementById("collegename").value = rec.collegename;
+                    document.getElementById("mobile").value = rec.mobile;
+                    document.getElementById("address").value = rec.address;
+                    document.getElementById("education").value = rec.education;
+                    document.getElementById("branch").value = rec.branch;
+                    document.getElementById("passyear").value = rec.passyear;
+                    document.getElementById("skills").value = rec.skills;
+                    document.getElementById("extraskills").value = rec.extraskills;
+                });
+
+            })
+            .catch(err => {
+                alert(err.message);
+            })
+
+    }
+
+</script>
+
+<body onload="GetData()">
+    <form onsubmit="StudentUpdate()">
+    <div class="row">
+        <div class="col-sm-12">
+            <div style="background-color: lavender;border-radius: 10px">
+                <div class="row">
+                    <div class="col-sm-2"></div>
+                    <div class="col-sm-4">
+                        <h4 style="color:red">Personal Details:</h4>
+                    </div>
+                    <div class="col-sm-6"></div>
+                </div>
+                <div class="row" style="display:none;">
+                    <div class="col-sm-2"></div>
+                    <div class="col-sm-3"><b>StudentId</b><br><input type="text" id="stdid" disabled="true"
+                            class="form-control" required></div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-2">
+                    </div>
+                    <div class="col-sm-3"><b>Student Name</b><input type="text" id="studentname"
+                            placeholder=" Enter Your name" class="form-control" required></div>
+
+                    <div class="col-sm-3"><b>Gender</b><br> <input type="radio" id="male" name="gender" value="Male" checked="true"/>
+                        Male <input name="gender" type="radio" id="female" value="Female" />
+                        Female</div>
+                    <div class="col-sm-3"><b>Phoneno</b><input type="text" id="mobile" placeholder="Enter MobileNumber"
+                            class="form-control" maxlength="10" pattern="[6-9]{1}[0-9]{9}" required></div>
+                    <div class="col-sm-1"></div>
+                </div><br>
+                <div class="row">
+                    <div class="col-sm-2"></div>
+
+                    <div class="col-sm-3"><b>Email-Id</b><input type="email" id="emailid"
+                            placeholder="Enter Your EmailId" class="form-control" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" required></div>
+                    <div class="col-sm-3"> <b>Date Of Birth</b><input type="date" id="dob" class="form-control" required></div>
+                    <div class="col-sm-3"><b>Address</b><textarea id="address" placeholder="Enter Address"
+                            class="form-control" required></textarea></div>
+                    <div class="col-sm-1"></div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-2"></div>
+                    <div class="col-sm-4">
+                        <h4 style="color:red">Education Details:</h4>
+                    </div>
+                    <div class="col-sm-6"></div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-2"></div>
+                    <div class="col-sm-3"><b>Collge Name</b><input type="text" id="collegename"
+                            placeholder="Enter college" class="form-control" required></div>
+                    <div class="col-sm-3"><b>Qualification</b><select id="education" class="form-control" required>
+                            <option value="">--select--</option>
+                            <option value="B.Tech">B.Tech</option>
+                            <option value="Msc">Msc</option>
+                            <option value="M.Tech">M.Tech</option>
+                            <option value="MCA">MCA</option>
+
+                        </select></div>
+                    <div class="col-sm-3"><b>Branch</b><input type="text" id="branch" placeholder="Enter Branch"
+                            class="form-control" required></div>
+                    <div class="col-sm-1"></div>
+                </div> <br>
+                <div class="row">
+                    <div class="col-sm-2"></div>
+                    <div class="col-sm-3"><b>PassYear</b><input type="text" id="passyear" placeholder="Enter PassedYear"
+                            class="form-control" required></div>
+                    <div class="col-sm-3"><b>Technical Skills</b><input type="text" id="skills"
+                            placeholder="Enter Skills" class="form-control" required></div>
+                    <div class="col-sm-3"><b>Extra Skills</b><input type="text" id="extraskills"
+                            placeholder="Enter Extra Skills" class="form-control" required></div>
+                    <div class="col-sm-1"> </div>
+                </div><br><br>
+
+                <div class="row">
+                    <div class="col-sm-5"></div>
+                    <div class="col-sm-1"><button type="submit" id="stdupdate" class="btn btn-success"
+                            >Update Student</button>
+                    </div>
+                    <div class="col-sm-5"></div>
+                </div><br>
+            </div>
+        </div>
+    </div></form>
+    </div>
+</body>

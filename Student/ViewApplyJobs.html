@@ -1,0 +1,294 @@
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+    <style>
+        .tablecss {
+            font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .tablecss td,
+        .tablecss th {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        .tablecss tr:nth-child(odd) {
+            background-color: #f2f2f2;
+        }
+
+        .tablecss tr:hover {
+            background-color: #ddd;
+        }
+
+        .tablecss th {
+            padding-top: 12px;
+            padding-bottom: 12px;
+            text-align: center;
+            background-color: lavender;
+            color: black;
+            font-weight: bold;
+        }
+    </style>
+<script>
+    let applyjob = [];
+
+    function performAjax(httpMethod, url, params) {
+        const myPromise = new Promise((resolve, reject) => {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    resolve(this.responseText);
+                }
+                if (this.status == 500) {
+                    reject({ error: true, message: "ServerError" });
+                }
+                if (this.status == 404) {
+                    reject({ error: true, message: "Resource not found" });
+                }
+            };
+            xhttp.open(httpMethod, url, true);
+            xhttp.setRequestHeader("Content-Type", "application/json");
+            params ? xhttp.send(params) : xhttp.send();
+        });
+        return myPromise;
+    }
+   
+
+    function LoadApplyJobsData() {
+        event.preventDefault();
+        const getdata1 = performAjax("GET", "http://localhost:4000/student/applyjob");
+        getdata1
+            .then((ofclist) => {
+
+                LoadApplyJobs(ofclist);
+            })
+            .catch(err => {
+                alert(err.message);
+            })
+    }
+
+
+    function LoadApplyJobs(applyjobs) {
+            applyjob = JSON.parse(applyjobs);
+            let tableHeader = `<tr><th>Sno</th><th>Name</th><th>Emailid</th><th>PhoneNumber</th><th>SSC</th><th>Inter</th><th>Qualification</th><th>CompanyName</th><th>JobCategory</th><th>RequiredSkills</th><th>Resume</th><th>Actions</th></tr>`;
+           if(applyjob.length>0){
+            let tableRow = applyjob.map((details, index) => {
+                const downloadButton = `<a class="glyphicon glyphicon-download" style="color:blue; font-size:22px;" onclick="downloadDoc('${details._id}')"></a>`;
+
+                const deleteButton = `<a id="${details._id}"
+                         onclick="deleteApplyName(event)"  style="color:red" class="glyphicon glyphicon-trash"></a>`;
+                const editButton = `<a id="${details._id}" onclick="editApplyJobName(event)" style="color:green"  class="glyphicon glyphicon-pencil"></a>`;
+                return `<tr><td>${index + 1}</td><td>${details.name}</td><td>${details.emailid}</td>  
+                            <td>${details.phone}</td> <td>${details.ssc}</td> <td>${details.inter}</td> <td>${details.qualification}</td><td>${details.companyname}</td> <td>${details.jobcategory}</td> <td>${details.requiredskills}</td><td>${downloadButton}</td><td>${editButton} ${deleteButton}</td></tr>`;
+            });
+            document.getElementById("viewapplyjobs").innerHTML = `<table  class="tablecss" border="2">${tableHeader}${tableRow.join('')}</table>`;
+        }
+        else {
+            tableRow = `<tr><td colspan="12" align="center">No Data Found</td></tr>`;
+            document.getElementById("viewapplyjobs").innerHTML = `${tableHeader}${tableRow}`;
+        }
+    }
+
+    function downloadDoc(id) {
+        const getFilesPromise = performAjax("GET", `http://localhost:4000/student/download/${id}`);
+        getFilesPromise
+            .then(([response]) => {
+                window.open(JSON.parse([response]).resume);
+            })
+            .catch(err => {
+                alert(err.message);
+            })
+    }
+
+   function ApplyJobsUpdate(){
+        const id = document.getElementById("appid").value;
+        const name = document.getElementById("appname").value;
+        const dob = document.getElementById("bday").value;
+        const emailid = document.getElementById("appemail").value;
+        const phone = document.getElementById("appphone").value;
+        const ssc = document.getElementById("ssc").value;
+        const inter = document.getElementById("inter").value;
+        const qualification = document.getElementById("appqua").value;
+        const companyname = document.getElementById("jobcompanyname").value;
+        const jobcategory = document.getElementById("appcategory").value;
+        const requiredskills = document.getElementById("reqskills").value;
+        const address = document.getElementById("appaddress").value;
+              const addstdPromise = performAjax(
+                    "PUT",
+                    `http://localhost:4000/student/update/${id}`,
+                    JSON.stringify({ name, dob, emailid, phone, ssc, inter, qualification, companyname, jobcategory, requiredskills, address})
+
+                );
+                addstdPromise
+                    .then((stdlist) => {
+                        confirm(" Successfully ApplyedJobsUpdated");
+                        LoadApplyJobsData();
+                        $('#myModalappyjobs').modal("hide");
+                    })
+                    .catch(err => {
+                        alert(err.message);
+                    })
+            
+        }
+
+
+    function editApplyJobName(event) {
+        event.preventDefault();
+        let editRecord;
+        applyjob.map(apply => {
+            if (apply._id === event.target.id) {
+                editRecord = apply;
+            }
+        });
+        if (editRecord !== undefined) {
+            $("#myModalappyjobs").modal();
+            document.getElementById("appname").focus();
+            document.getElementById("appid").value = editRecord._id;
+            document.getElementById("appname").value = editRecord.name;
+            document.getElementById("bday").value = editRecord.dob;
+            document.getElementById("appemail").value = editRecord.emailid;
+            document.getElementById("appphone").value = editRecord.phone;
+            document.getElementById("ssc").value = editRecord.ssc;
+            document.getElementById("inter").value = editRecord.inter;
+            document.getElementById("appqua").value = editRecord.qualification;
+            document.getElementById("jobcompanyname").value = editRecord.companyname;
+            document.getElementById("appcategory").value = editRecord.jobcategory;
+            document.getElementById("reqskills").value = editRecord.requiredskills;
+            document.getElementById("appaddress").value = editRecord.address;
+         
+        }
+        else {
+            alert("ApplyJobs not found");
+        }
+    }
+    function LoadData() {
+            const getdata1 = performAjax("GET", "http://localhost:4000/officer/viewcompany");
+            getdata1
+                .then((companys) => {
+                    GetCompanyName(companys);
+                })
+                .catch(err => {
+                    alert(err.message);
+                })
+        }
+        function GetCompanyName(Data) {
+            const companyname = document.getElementById("jobcompanyname");
+            const data = JSON.parse(Data);
+            for (let i = 0; i < data.length; i++) {
+                let option = document.createElement("OPTION");
+                option.innerHTML = data[i].CompanyName;
+                option.value = data[i].CompanyName;
+                companyname.options.add(option);
+            }
+        }
+
+    function deleteApplyName(event) {
+        event.preventDefault();
+        let result = confirm("Are you sure you want to delete?");
+        if (result) {
+            const deletePromise = performAjax('DELETE', `http://localhost:4000/student/applyjob/${event.target.id}`);
+            deletePromise
+                .then((stds) => {
+                    LoadApplyJobs(stds);
+                })
+                .catch(err => {
+                    alert(err.message);
+                })
+        }
+    }
+
+
+</script>
+
+<body onload="LoadApplyJobsData()">
+    <table id="viewapplyjobs" border="2" class="tablecss"></table>
+    <div class="modal fade" id="myModalappyjobs" role="dialog">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" style="background-color:lavender;border-radius: 10px">
+                <div class="modal-header" style="background-color:white;border-radius :10px">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h3 style="color:black;text-align:center">Applyed For Jobs</h3>
+                </div>
+                <div class="modal-body">
+                    <form onsubmit="ApplyJobsUpdate()">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div style="background-color: lavender;border-radius: 10px"><br><br>
+                                <div class="row" style="display:none;">
+                                    <div class="col-sm-2"></div>
+                                    <div class="col-sm-3"><b>Id</b><br><input type="text" id="appid"
+                                            class="form-control" required></div>
+                                </div>
+                                <script>
+                                    LoadData();
+                                </script>
+                                <div class="row">
+                                    <div class="col-sm-2"></div>
+                                    <div class="col-sm-3"><b>Name</b><br><input type="text" id="appname"
+                                            placeholder="enter name" class="form-control" readonly></div>
+
+                                    <div class="col-sm-3"><b>Date of Birth</b><input type="date" id="bday"
+                                            placeholder="enter ur DOB" class="form-control" required></div>
+                                    <div class="col-sm-3"><b>Email id</b><input type="email" id="appemail"
+                                            placeholder="enter ur mail id" class="form-control" readonly ></div>
+                                    <div class="col-sm-1"></div>
+                                </div><br><br>
+                                <div class="row">
+                                    <div class="col-sm-2"></div>
+                                    <div class="col-sm-3"><b>Mobile Number</b><input type="text" id="appphone"
+                                            placeholder="enter ur mobileNo" class="form-control"  maxlength="10" pattern="[6-9]{1}[0-9]{9}" required></div>
+                                    <div class="col-sm-3"><b>S.S.C percentage</b><input type="num" id="ssc"
+                                            placeholder="Enter S.S.C percentage" class="form-control" required></div>
+                                    <div class="col-sm-3"><b>Inter percentage</b><input type="num" id="inter"
+                                            placeholder="Enter Inter percentage" class="form-control" required></div>
+                                    <div class="col-sm-1"></div>
+                                </div> <br><br>
+                                <div class="row">
+                                    <div class="col-sm-2"></div>
+                                    <div class="col-sm-3"><b>Qualification</b><select id="appqua" class="form-control" required>
+                                            <option value="">--select--</option>
+                                            <option value="B.Tech">B.Tech</option>
+                                            <option value="Msc">Msc</option>
+                                            <option value="M.Tech">M.Tech</option>
+                                            <option value="MCA">MCA</option>
+
+                                        </select></div>
+                                    <div class="col-sm-3"><b>CompanyName&nbsp;</b><select id="jobcompanyname"
+                                            class="form-control" required>
+                                            <option value="select">select</option>
+                                        </select></div>
+                                    <div class="col-sm-3"><b>Job Category</b><input type="text" id="appcategory"
+                                            placeholder="Enter Job Category" class="form-control" required>
+                                    </div>
+                                        <div class="col-sm-1"></div>
+                                    </div> <br><br>
+                                    <div class="row">
+                                        <div class="col-sm-2"></div>
+                                    <div class="col-sm-3"><b>Skills</b><input type="text" id="reqskills"
+                                            placeholder="skills" class="form-control" required></div>
+                                    <div class="col-sm-3"><b>Address</b><textarea type="text" id="appaddress"
+                                            placeholder="Enter Address" class="form-control" required></textarea></div>
+                                    <div class="col-sm-3"> <b>Resume</b><input type="file" id="resume"
+                                            class="form-control" required></div>
+                                    <div class="col-sm-1"></div>
+                                </div><br><br>
+                                <div class="row">
+                                    <div class="col-sm-5"></div>
+                                    <div class="col-sm-1"><button type="submit" id="applysubmit" class="btn btn-success"
+                                            >ApplyJobUpdate</button></div>
+                                    <div class="col-sm-5"></div>
+                                </div> <br>
+                            </div></form>
+                        </div>
+                    </div>
+                    <div class="col-sm-1"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>

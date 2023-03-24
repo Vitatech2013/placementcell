@@ -1,0 +1,209 @@
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+    <style>
+        .tablecss {
+            font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .tablecss td,
+        .tablecss th {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        .tablecss tr:nth-child(odd) {
+            background-color: #f2f2f2;
+        }
+
+        .tablecss tr:hover {
+            background-color: #ddd;
+        }
+
+        .tablecss th {
+            padding-top: 12px;
+            padding-bottom: 12px;
+            text-align: center;
+            background-color: lavender;
+            color: black;
+            font-weight: bold;
+        }
+    </style>
+<script>
+    let applyjob = [];
+
+    function performAjax(httpMethod, url, params) {
+        const myPromise = new Promise((resolve, reject) => {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    resolve(this.responseText);
+                }
+                if (this.status == 500) {
+                    reject({ error: true, message: "ServerError" });
+                }
+                if (this.status == 404) {
+                    reject({ error: true, message: "Resource not found" });
+                }
+            };
+            xhttp.open(httpMethod, url, true);
+            xhttp.setRequestHeader("Content-Type", "application/json");
+            params ? xhttp.send(params) : xhttp.send();
+        });
+        return myPromise;
+    }
+
+    function GetValues(event) {
+        const getUsersPromise = performAjax("GET", `http://localhost:4000/officer/details/${event.target.id}`);
+        getUsersPromise
+            .then((response) => {
+                const data = JSON.parse([response]);
+                [data].map(rec => {
+                    document.getElementById("name").value = rec.name;
+                    document.getElementById("companyname").value = rec.companyname;
+                    document.getElementById("jobcatogory1").value = rec.jobcategory;
+                    document.getElementById("id").value = event.target.id;
+                });
+            })
+            .catch(err => {
+                alert(err.message);
+            })
+    }
+
+    function LoadApplyJobsData() {
+        event.preventDefault();
+        const getdata1 = performAjax("GET", "http://localhost:4000/officer/viewapplyjob");
+        getdata1
+            .then((responce) => {
+                LoadApplyJobs(responce);
+            })
+            .catch(err => {
+                alert(err.message);
+            })
+    }
+
+    function LoadApplyJobs(applyjobs) {
+        applyjob = JSON.parse(applyjobs);
+        let tableHeader = `<tr><th>Sno</th><th>Name</th><th>Emailid</th><th>PhoneNumber</th><th>SSC</th><th>Inter</th><th>Qualification</th><th>CompanyName</th><th>JobCategory</th><th>RequiredSkills</th><th>Resume</th><th>Status</th></tr>`;
+        if (applyjob.length > 0) {
+            let tableRow = applyjob.map((details, index) => {
+                const downloadButton = `<a class="glyphicon glyphicon-download" style="color:blue; font-size:22px;" onclick="downloadDoc('${details._id}')"></a>`;
+                const editButton = `<a id="${details._id}" onclick="GetValues(event)" style="color:blue; font-size:20px;" data-toggle="modal" data-target="#myModalstatus" data-backdrop="static" data-keyboard="false"  class="glyphicon glyphicon-plus""></a>`;
+                return `<tr><td>${index + 1}</td><td>${details.name}</td> <td>${details.emailid}</td>  
+                            <td>${details.phone}</td> <td>${details.ssc}</td> <td>${details.inter}</td> <td>${details.qualification}</td><td>${details.companyname}</td> <td>${details.jobcategory}</td> <td>${details.requiredskills}</td><td>${downloadButton}</td><td> ${editButton}</td></tr>`;
+            });
+            document.getElementById("viewapplyjobs").innerHTML = `<table  class="tablecss" border="2">${tableHeader}${tableRow.join('')}</table>`;
+        }
+        else {
+            tableRow = `<tr><td colspan="12" align="center">No Data Found</td></tr>`;
+            document.getElementById("viewapplyjobs").innerHTML = `${tableHeader}${tableRow}`;
+        }
+    }
+
+    function downloadDoc(id) {
+        const getFilesPromise = performAjax("GET", `http://localhost:4000/officer/download/${id}`);
+        getFilesPromise
+            .then((response) => {
+                window.open(JSON.parse(response).resume);
+            })
+            .catch(err => {
+                alert(err.message);
+            })
+    }
+
+    function Send() {
+        event.preventDefault();
+        const id = document.getElementById("id").value;
+        const status = document.getElementById("status").value;
+        const remarks = document.getElementById("remarks").value;
+        const getRegPromise = performAjax(
+            "PUT",
+            `http://localhost:4000/officer/statusupdate/${id}`,
+            JSON.stringify({ status, remarks })
+        );
+        getRegPromise
+            .then((regPromise) => {
+                alert('Successfully Completed');
+                $('#myModalstatus').modal("hide");
+
+            })
+            .catch(err => {
+                alert(err.message);
+            })
+    }
+
+
+</script>
+
+<body onload="LoadApplyJobsData()">
+    <table id="viewapplyjobs" border="2" class="tablecss"></table>
+
+    <div class="modal fade" id="myModalstatus" role="dialog">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" style="background-color:lavender;border-radius: 10px">
+                <div class="modal-header" style="background-color:white;border-radius :10px">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h3 style="color:black;text-align:center">Sending StatusReport</h3>
+                </div>
+                <div class="modal-body">
+                    <form onsubmit="Send()">
+                    <div class="row">
+                        <div class="col-sm-1"></div>
+                        <div class="col-sm-10">
+                            <div style="background-color: lavender;border-radius: 10px"><br><br>
+                            </div>
+
+
+                            <div class="row" style="display:none;">
+                                <div class="col-sm-4"></div>
+                                <div class="col-sm-4"><b>Id</b><br><input type="text" id="id" disabled="true"
+                                        class="form-control" required></div>
+                                <div class="col-sm-2"></div>
+                            </div>
+                            <div class="row">
+                                
+                                <div class="col-sm-4"><b>Name</b>
+                                    <input type="text" id="name" class="form-control" readonly>
+                                </div>
+                                <div class="col-sm-4"><b>CompanyName</b>
+                                    <input type="text" id="companyname" class="form-control" readonly></div>
+
+                                <div class="col-sm-4"><b>JobCatogory</b>
+                                    <input type="text" id="jobcatogory1" class="form-control" readonly></div>
+                                
+                            </div><br>
+                            <div class="row">
+                                <div class="col-sm-4"><b>Status</b>
+                                    <select id="status" class="form-control" required>
+                                            <option value="Pending">Pending</option>
+                                            <option value="Accepte">Accepte</option>
+                                            <option value="Reject">Reject</option>
+                                            
+                                        </select></div>
+                                <div class="col-sm-4"><b>Discription</b>
+
+                                    <textarea id="remarks" class="form-control" required></textarea></div>
+                                <div class="col-sm-2"></div>
+                            </div> <br><br>
+                            <div class="row">
+                                <div class="col-sm-5"></div>
+                                <div class="col-sm-1"><button type="submit" class="btn btn-success"
+                                        >SendStatus</button></div>
+
+                                <div class="col-sm-5"></div>
+                            </div> <br>
+                        </div>
+                    </div></form>
+                </div>
+
+                <br>
+            </div>
+        </div>
+    </div>
+    </div>
+</body>

@@ -1,0 +1,174 @@
+<html>
+<!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script> -->
+
+<head>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+   
+
+    <title>Placement Cell</title>
+</head>
+    <script>
+
+        function performAjax(httpMethod, url, params) {
+            const myPromise = new Promise((resolve, reject) => {
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function () {
+                    if (this.readyState == 4 && this.status == 200) {
+                        resolve((this.responseText));
+
+                    }
+                    if (this.status == 500) {
+                        reject({ error: true, message: "ServerError" });
+                    }
+                    if (this.status == 404) {
+                        reject({ error: true, message: "Resource not found" });
+                    }
+                };
+                xhttp.open(httpMethod, url, true);
+                xhttp.setRequestHeader("Content-Type", "application/json");
+                params ? xhttp.send(params) : xhttp.send();
+            });
+            return myPromise;
+        }
+
+
+        function OfficerLogin() {
+            event.preventDefault();
+            const EmailId = document.getElementById("fcemailid").value;
+            const Password = document.getElementById("password").value;
+
+            const getUserPromise = performAjax(
+                "GET",
+                `http://localhost:4000/officer/officerlogin?EmailId=${EmailId}&Password=${Password}`
+            );
+            getUserPromise
+                .then((loginsPromise) => {
+                    if (loginsPromise == "" || loginsPromise == null) {
+                        alert('Login Faild');
+                    }
+                    else {
+                        const data = JSON.parse(loginsPromise);
+                        // const users = [data].map(record => {
+                        //     return record;
+                        // });
+                        data.map(user => {
+                            sessionStorage.setItem("userid", user._id);
+                            sessionStorage.setItem("emailid", user.EmailId);
+                            sessionStorage.setItem("Name", user.Name);
+                            sessionStorage.setItem("password", user.Password);
+                            window.top.location.href = "officer";
+                        });
+                    }
+                })
+                .catch(err => {
+                    alert(err.message);
+                })
+        }
+
+        function SendPassword() {
+        event.preventDefault();
+        const EmailId = document.getElementById("emailid").value;
+        const searchPromise = performAjax(
+            "GET",
+            `http://localhost:4000/officer/getpassword?EmailId=${EmailId}`
+        );
+        searchPromise
+        .then((response) => {
+            if (response == '[]') {
+                alert('Invalid Email Id');
+            }
+            else {
+                alert('Credentials Sent to Your Email');
+            }
+        })
+        .catch(err => {
+            alert(err.message);
+        })
+    }
+    </script>
+<form onsubmit="OfficerLogin()">
+    <div class="row">
+        <div class="col-sm-1"></div>
+        <div class="col-sm-12">
+            <div>
+                <center>
+                    <h3 style="color: black">OfficerLogin</h3>
+                </center>
+                
+                <br>
+
+                <div class="row">
+                    <div class="col-sm-3"></div>
+                    <div class="col-sm-2"><label for="">EmailId:</label></div>
+                    <div class="col-sm-3"><input type="email" class="form-control" id="fcemailid"
+                            placeholder="Enter Faculty EmailId" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" required></div>
+                    <div class="col-sm-4"></div>
+                </div><br>
+                <div class="row">
+                    <div class="col-sm-3"></div>
+                    <div class="col-sm-2"><label for="">Password:</label></div>
+                    <div class="col-sm-3"><input type="password" class="form-control" id="password"
+                            placeholder="Enter Password" required></div>
+                    <div class="col-sm-4"></div>
+                </div><br>
+                <div class="row">
+                    <div class="col-sm-5"></div>
+                    <div class="col-sm-3"><button type="submit" class="btn btn-success"
+                        >Login</button></div>
+                    <div class="col-sm-4"></div>
+                </div><br><br>
+
+                <div class="col-sm-1"></div>
+            </div><br>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-7"></div>
+        <div class="col-sm-3"><a href="" data-toggle="modal" data-target="#myModal" style="text-decoration: none" target="iframe"> <h5>Forgot Password...?</a></h5></div>
+        <div class="col-sm-2"></div>
+    </div><br>
+</form>
+<!-- Modal PopUp -->
+<div class="modal fade" id="myModal" role="dialog">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Forgot Password</h4>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-sm-1"></div>
+                    <div class="col-sm-3"><label>Enter&nbsp;Valid&nbsp;EmailId</label></div>
+                    <div class="col-sm-7">
+                        <input type="email" name="emailid" id="emailid" class="form-control" placeholder="Email Id" required>
+                    </div>
+                    <div class="col-sm-1"></div>
+                </div><br><br><br>
+                <div class="row">
+                    <div class="col-sm-6"></div>
+                    <div class="col-md-5">
+                        <button type="button" id="submit" class="btn btn-info" data-dismiss="modal" onclick="SendPassword()">Send Password</button>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                    <div class="col-sm-1"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 
+
+    <br>
+    
+    </body>
+
+</html>

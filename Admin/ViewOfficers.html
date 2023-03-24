@@ -1,0 +1,253 @@
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+    .tablecss {
+        font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+        border-collapse: collapse;
+        width: 98%;
+    }
+
+    .tablecss td,
+    .tablecss th {
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+
+    .tablecss tr:nth-child(odd) {
+        background-color: #f2f2f2;
+    }
+
+    .tablecss tr:hover {
+        background-color: #ddd;
+    }
+
+    .tablecss th {
+        padding-top: 12px;
+        padding-bottom: 12px;
+        text-align: center;
+        background-color: lavender;
+        color: black;
+        font-weight: bold;
+    }
+</style>
+
+<script>
+    let officer = [];
+
+    function performAjax(httpMethod, url, params) {
+        const myPromise = new Promise((resolve, reject) => {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    resolve(this.responseText);
+                }
+                if (this.status == 500) {
+                    reject({ error: true, message: "ServerError" });
+                }
+                if (this.status == 404) {
+                    reject({ error: true, message: "Resource not found" });
+                }
+            };
+            xhttp.open(httpMethod, url, true);
+            xhttp.setRequestHeader("Content-Type", "application/json");
+            params ? xhttp.send(params) : xhttp.send();
+        });
+        return myPromise;
+    }
+    function LoadOfficersData() {
+        event.preventDefault();
+        const getdata1 = performAjax("GET", "http://localhost:4000/admin/officerdata");
+        getdata1
+            .then((ofclist) => {
+
+                LoadOfficer(ofclist);
+            })
+            .catch(err => {
+                alert(err.message);
+            })
+    }
+
+    function LoadOfficer(officers) {
+        officer = JSON.parse(officers);
+        let tableHeader = `<tr><th>Sno</th><th>Name</th><th>Gender</th><th>EmailId</th><th>MobileNumber</th><th>City</th><th>Address</th><th>Actions</th></tr>`;
+        if (officer.length > 0) {
+            let tableRow = officer.map((details, index) => {
+                const deleteButton = `<a id="${details._id}"
+                         onclick="deleteOfcName(event)" style="color:red"  class="glyphicon glyphicon-trash" ></a>`;
+                const editButton = `<a id="${details._id}" onclick="editOfcName(event)" style="color:green"  class="glyphicon glyphicon-pencil"></a>`;
+                return `<tr><td>${index + 1}</td><td>${details.Name}</td> <td>${details.Gender}</td> <td>${details.EmailId}</td><td>${details.Mobileno}</td>  
+                            <td>${details.City}</td> <td>${details.Address}</td><td>${editButton} ${deleteButton}</td></tr>`;
+            });
+            document.getElementById("viewfcs").innerHTML = `<table class="tablecss" border="2">${tableHeader}${tableRow.join('')}</table>`;
+        }
+        else {
+            tableRow = `<tr><td colspan="12" align="center">No Data Found</td></tr>`;
+            document.getElementById("viewfcs").innerHTML = `${tableHeader}${tableRow}`;
+        }
+    }
+
+    function editOfcName(event) {
+        event.preventDefault();
+
+        let Record;
+        officer.map(off => {
+            if (off._id === event.target.id) {
+                Record = off;
+            }
+        });
+        if (Record !== undefined) {
+            $("#myModalofficers").modal();
+            document.getElementById("ofcname").focus();
+            document.getElementById("ofcid").value = Record._id;
+            document.getElementById("ofcname").value = Record.Name;
+            Record.Gender === 'Male' ? document.getElementById("Male").checked = true : document.getElementById("Female").checked = true;
+            document.getElementById("ofcemailid").value = Record.EmailId;
+            document.getElementById("ofcmobileno").value = Record.Mobileno;
+            document.getElementById("ofccity").value = Record.City;
+            document.getElementById("ofcaddress").value = Record.Address;
+
+
+        } else {
+            alert("Officers not found");
+        }
+    }
+
+
+    function deleteOfcName(event) {
+        event.preventDefault();
+        let result = confirm("Are you sure you want to delete?");
+        if (result) {
+            const deletePromise = performAjax('DELETE', `http://localhost:4000/admin/offier/${event.target.id}`);
+            deletePromise
+                .then((remainingofcs) => {
+                    LoadOfficer(remainingofcs);
+                })
+                .catch(err => {
+                    alert(err.message);
+                })
+        }
+    }
+
+    function OfficerUpdate() {
+        event.preventDefault();
+        const id = document.getElementById("ofcid").value;
+        const Name = document.getElementById("ofcname").value;
+        const Gender = document.getElementById("Male").checked ? "Male" : "Female";
+        const EmailId = document.getElementById("ofcemailid").value;
+        const Mobileno = document.getElementById("ofcmobileno").value;
+        const City = document.getElementById("ofccity").value;
+        const Address = document.getElementById("ofcaddress").value;
+        const updateofcPromise = performAjax(
+            "PUT",
+            `http://localhost:4000/officer/officers/${id}`,
+            JSON.stringify({ Name, Gender, EmailId, Mobileno, City, Address })
+        );
+        updateofcPromise
+            .then((response) => {
+                LoadOfficersData();
+                confirm("Successfully Updated");
+                $('#myModalofficers').modal("hide");
+            })
+            .catch(err => {
+                alert(err.message);
+            })
+    }
+
+
+</script>
+<html>
+
+<body onload="LoadOfficersData()">
+    <center>
+        <table id="viewfcs" border="2" class="tablecss"></table>
+    </center>
+    <br>
+    <div class="modal fade" id="myModalofficers" role="dialog">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" style="background-color:lavender;border-radius: 10px">
+                <div class="modal-header" style="background-color:white;border-radius :10px">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h3 style="color:black;text-align:center">PlacementOfficer Registration</h3>
+                </div>
+                <div class="modal-body">
+                    <form onsubmit="OfficerUpdate()">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div>
+                                <div class="row" style="display:none;">
+                                    <div class="col-sm-2"></div>
+                                    <div class="col-sm-3"><b>officerId</b><br><input type="text" id="ofcid"
+                                            disabled="true" class="form-control" required></div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-3"></div>
+                                    <div class="col-sm-2"><b>Name</b></div>
+                                    <div class="col-sm-3"><input type="text" id="ofcname" placeholder="Enter Your Name"
+                                            class="form-control" required></div>
+                                    <div class="col-sm-2"></div>
+                                </div><br>
+                                <div class="row">
+                                    <div class="col-sm-3"></div>
+                                    <div class="col-sm-2"><b>Gender</b></div>
+                                    <div class="col-sm-3">
+                                        <input type="radio" value="Male" name="gender" id="Male" checked="true">Male
+                                        <input type="radio" value="Female" name="gender" id="Female">Female
+                                    </div>
+                                    <div class="col-sm-2"></div>
+                                </div><br>
+                                <div class="row">
+                                    <div class="col-sm-3"></div>
+                                    <div class="col-sm-2"><b>Email-Id</b></div>
+                                    <div class="col-sm-3"><input type="email" id="ofcemailid"
+                                            placeholder="Enter EmailId" class="form-control" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" required></div>
+                                    <div class="col-sm-2"></div>
+
+                                </div>
+                                <br>
+                                <div class="row">
+                                    <div class="col-sm-3"></div>
+                                    <div class="col-sm-2"><b>Phone number</b></div>
+                                    <div class="col-sm-3"><input type="text" id="ofcmobileno"
+                                            placeholder="Enter MobileNumber" class="form-control" maxlength="10" pattern="[6-9]{1}[0-9]{9}" required></div>
+                                    <div class="col-sm-2"></div>
+
+                                </div><br>
+                                <div class="row">
+                                    <div class="col-sm-3"></div>
+                                    <div class="col-sm-2"><b>Enter city</b></div>
+                                    <div class="col-sm-3"><input type="text" id="ofccity" placeholder="Enter City"
+                                            class="form-control" required></div>
+                                    <div class="col-sm-2"></div>
+                                </div>
+                                <br>
+                                <div class="row">
+                                    <div class="col-sm-3"></div>
+                                    <div class="col-sm-2"><b>Address</b></div>
+                                    <div class="col-sm-3"><textarea id="ofcaddress" placeholder="Enter Address"
+                                            class="form-control" required></textarea>
+                                    </div>
+                                    <div class="col-sm-2"></div>
+                                </div><br>
+
+                                <div class="row">
+                                    <div class="col-sm-5"></div>
+
+                                    <div class="col-sm-1"><button type="submit" id="ofcupdate" class="btn btn-success"
+                                            >Update
+                                            PlacementOfficer</button></div>
+                                    <div class="col-sm-5"></div>
+                                </div><br><br>
+                            </div>
+                        </div>
+                    </div></form>
+                    <div class="col-sm-1"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

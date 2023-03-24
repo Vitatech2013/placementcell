@@ -1,0 +1,287 @@
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+    .tablecss {
+        font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+        border-collapse: collapse;
+        width: 98%;
+    }
+
+    .tablecss td,
+    .tablecss th {
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+
+    .tablecss tr:nth-child(odd) {
+        background-color: #f2f2f2;
+    }
+
+    .tablecss tr:hover {
+        background-color: #ddd;
+    }
+
+    .tablecss th {
+        padding-top: 12px;
+        padding-bottom: 12px;
+        text-align: center;
+        background-color: lavender;
+        color: black;
+        font-weight: bold;
+    }
+</style>
+
+<script>
+    let student = [];
+
+    function performAjax(httpMethod, url, params) {
+        const myPromise = new Promise((resolve, reject) => {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    resolve(this.responseText);
+                }
+                if (this.status == 500) {
+                    reject({ error: true, message: "ServerError" });
+                }
+                if (this.status == 404) {
+                    reject({ error: true, message: "Resource not found" });
+                }
+            };
+            xhttp.open(httpMethod, url, true);
+            xhttp.setRequestHeader("Content-Type", "application/json");
+            params ? xhttp.send(params) : xhttp.send();
+        });
+        return myPromise;
+    }
+    function LoadStudentsData() {
+        event.preventDefault();
+        const getdata = performAjax("GET", "http://localhost:4000/student/studentdata");
+        getdata
+            .then((stdlist) => {
+                LoadStudents(stdlist);
+            })
+            .catch(err => {
+                alert(err.message);
+            })
+    }
+
+
+    function LoadStudents(students) {
+        student = JSON.parse(students);
+        let tableHeader = `<tr><th>SNo</th><th>StudentName</th><th>Gender</th><th>DateOfBirth</th><th>EmailId</th><th>MobileNumber</th><th>Address</th><th>Education</th><th>Branch</th><th>PassedYear</th><th>Skills</th><th>ExtraSkills</th><th>Actions</th></tr>`;
+        if (student.length > 0) {
+            let tableRow = student.map((mydetails, index) => {
+                const deleteButton = `<a id="${mydetails._id}"
+                         onclick="deleteName(event)" style="color:red"  class="glyphicon glyphicon-trash"></a>`;
+                const editButton = `<a id="${mydetails._id}" onclick="editstudent(event)" style="color:green" class="glyphicon glyphicon-pencil"></a>`;
+
+                return `<tr><td>${index + 1}</td><td>${mydetails.studentname}</td><td>${mydetails.gender}</td> <td>${mydetails.dob}</td><td>${mydetails.emailid}</td><td>${mydetails.mobile}</td> <td>${mydetails.address}</td> 
+                             <td>${mydetails.education}</td> <td>${mydetails.branch}</td><td>${mydetails.passyear}</td> <td>${mydetails.skills}</td> <td>${mydetails.extraskills}</td> 
+                            <td>${editButton} &nbsp;&nbsp;${deleteButton}</td></tr>`;
+            });
+            document.getElementById("viewstds").innerHTML = `<table class="tablecss" border="2" >${tableHeader}${tableRow.join('')}</table>`;
+        }
+        else {
+            tableRow = `<tr><td colspan="12" align="center">No Data Found</td></tr>`;
+            document.getElementById("viewstds").innerHTML = `${tableHeader}${tableRow}`;
+        }
+    }
+
+
+
+
+    function editstudent(event) {
+        event.preventDefault();
+        let editRecord;
+        student.map(std => {
+            if (std._id === event.target.id) {
+                editRecord = std;
+            }
+        });
+        if (editRecord !== undefined) {
+            $("#myModalstudents").modal();
+            document.getElementById("studentname").focus();
+            document.getElementById("stdid").value = editRecord._id;
+            document.getElementById("studentname").value = editRecord.studentname;
+            editRecord.gender === 'Male' ? document.getElementById("Male").checked = true : document.getElementById("Female").checked = true; document.getElementById("dob").value = editRecord.dob;
+            document.getElementById("emailid").value = editRecord.emailid;
+            document.getElementById("mobile").value = editRecord.mobile;
+            document.getElementById("address").value = editRecord.address;
+            document.getElementById("collegename").value = editRecord.collegename;
+            document.getElementById("education").value = editRecord.education;
+            document.getElementById("branch").value = editRecord.branch;
+            document.getElementById("passyear").value = editRecord.passyear;
+            document.getElementById("skills").value = editRecord.skills;
+            document.getElementById("extraskills").value = editRecord.extraskills;
+            document.getElementById("stdupdate").style.display = 'inline';
+        }
+        else {
+            alert("Students not found");
+        }
+    }
+    function StudentUpdate() {
+        event.preventDefault();
+        const id = document.getElementById("stdid").value;
+        const studentname = document.getElementById("studentname").value;
+        const gender = document.getElementById("male").checked ? "Male" : "Female";
+        const dob = document.getElementById("dob").value;
+        const emailid = document.getElementById("emailid").value;
+        const mobile = document.getElementById("mobile").value;
+        const address = document.getElementById("address").value;
+        const collegename = document.getElementById("collegename").value;
+        const education = document.getElementById("education").value;
+        const branch = document.getElementById("branch").value;
+        const passyear = document.getElementById("passyear").value;
+        const skills = document.getElementById("skills").value;
+        const extraskills = document.getElementById("extraskills").value;
+
+        const getRegPromise = performAjax(
+            "PUT",
+            `http://localhost:4000/student/updateprofile/${id}`,
+            JSON.stringify({ studentname, gender, dob, emailid, mobile, address, collegename, education, branch, passyear, skills, extraskills })
+        );
+        getRegPromise
+            .then((regPromise) => {
+                alert('Update Successfully Completed');
+                LoadStudentsData();
+                $("#myModalstudents").modal("hide");
+            })
+            .catch(err => {
+                alert(err.message);
+            })
+    }
+
+    function deleteName(event) {
+        event.preventDefault();
+        let result = confirm("Are you sure you want to delete?");
+        if (result) {
+            const deletePromise = performAjax('DELETE', `http://localhost:4000/admin/student/${event.target.id}`);
+            deletePromise
+                .then((stds) => {
+                    LoadStudents(stds);
+                })
+                .catch(err => {
+                    alert(err.message);
+                })
+        }
+    }
+
+
+
+</script>
+<html>
+
+<body onload="LoadStudentsData()">
+    <center>
+        <table id="viewstds" border="2" class="tablecss"></table>
+    </center>
+    <br>
+    <div class="modal fade" id="myModalstudents" role="dialog">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" style="background-color:lavender">
+                <div class="modal-header" style="background-color:white;border-radius :10px">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h3 style="color:black;text-align:center">Registration For Students </h3>
+                </div>
+                <div class="modal-body">
+                    <form onsubmit="StudentUpdate()">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div style="background-color: lavender;border-radius: 10px">
+                                <div class="row">
+                                    <div class="col-sm-2"></div>
+                                    <div class="col-sm-4">
+                                        <h4 style="color:red">Personal Details:</h4>
+                                    </div>
+                                    <div class="col-sm-6"></div>
+                                </div>
+                                <div class="row" style="display:none;">
+                                    <div class="col-sm-2"></div>
+                                    <div class="col-sm-3"><b>StudentId</b><br><input type="text" id="stdid"
+                                            disabled="true" class="form-control" required></div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-2">
+                                    </div>
+                                    <div class="col-sm-3"><b>Student Name</b><input type="text" id="studentname"
+                                            placeholder=" Enter Your name" class="form-control" required></div>
+
+                                    <div class="col-sm-3"><b>Gender</b><br> <input type="radio" id="Male" name="gender"
+                                            value="Male"  checked="true"/> Male <input name="gender" type="radio" id="Female"
+                                            value="Female" />
+                                        Female</div>
+                                    <div class="col-sm-3"><b>Phoneno</b><input type="text" id="mobile"
+                                            placeholder="Enter MobileNumber" class="form-control" maxlength="10" pattern="[6-9]{1}[0-9]{9}" required></div>
+
+                                    <div class="col-sm-1"></div>
+                                </div><br>
+                                <div class="row">
+                                    <div class="col-sm-2"></div>
+
+                                    <div class="col-sm-3"><b>Email-Id</b><input type="email" id="emailid"
+                                            placeholder="Enter Your EmailId" class="form-control" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" required></div>
+                                    <div class="col-sm-3"> <b>Date Of Birth</b><input type="date" id="dob"
+                                            class="form-control" required></div>
+                                    <div class="col-sm-3"><b>Address</b><textarea id="address"
+                                            placeholder="Enter Address" class="form-control" required></textarea></div>
+
+                                    <div class="col-sm-1"></div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-sm-2"></div>
+                                    <div class="col-sm-4">
+                                        <h4 style="color:red">Education Details:</h4>
+                                    </div>
+                                    <div class="col-sm-6"></div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-2"></div>
+                                    <div class="col-sm-3"><b>Collge Name</b><input type="text" id="collegename"
+                                            placeholder="Enter college" class="form-control" required></div>
+                                    <div class="col-sm-3"><b>Qualification</b><select id="education"
+                                            class="form-control" required>
+                                            <option value="">--select--</option>
+                                            <option value="B.Tech">B.Tech</option>
+                                            <option value="Msc">Msc</option>
+                                            <option value="M.Tech">M.Tech</option>
+                                            <option value="MCA">MCA</option>
+
+                                        </select></div>
+                                    <div class="col-sm-3"><b>Branch</b><input type="text" id="branch"
+                                            placeholder="Enter Branch" class="form-control" required></div>
+                                    <div class="col-sm-1"></div>
+                                </div> <br>
+                                <div class="row">
+                                    <div class="col-sm-2"></div>
+                                    <div class="col-sm-3"><b>PassYear</b><input type="text" id="passyear"
+                                            placeholder="Enter PassedYear" class="form-control" required></div>
+                                    <div class="col-sm-3"><b>Technical Skills</b><input type="text" id="skills"
+                                            placeholder="Enter Skills" class="form-control" required></div>
+                                    <div class="col-sm-3"><b>Extra Skills</b><input type="text" id="extraskills"
+                                            placeholder="Enter Extra Skills" class="form-control" required></div>
+                                    <div class="col-sm-1"> </div>
+                                </div><br><br>
+
+                                <div class="row">
+                                    <div class="col-sm-5"></div>
+                                    <div class="col-sm-1"><button type="submit" id="stdupdate" class="btn btn-success"
+                                            >Update Student</button>
+                                    </div>
+                                    <div class="col-sm-5"></div>
+                                </div><br>
+                            </div>
+                        </div>
+                    </div>></form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+</body>
+
+</html>
